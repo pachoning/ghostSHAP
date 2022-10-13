@@ -41,7 +41,6 @@ class GhostShap:
     # Obtain matrix H
     # TO DO: run this in parallel
     def obtain_H(self, Z):
-        idx_columns = range(self.num_features)
         ones_vector = np.full(shape=(self.num_individuals, 1), fill_value=1)
         n_rows_Z = Z.shape[0]
         p = self.num_features
@@ -68,9 +67,9 @@ class GhostShap:
                 x_from_x_test = self.x_test[:, idx_x]
                 x_from_x_test_intercept = np.concatenate(([[1]], x_from_x_test), axis=1)
                 prediction = np.matmul(x_from_x_test_intercept, beta)
-                idx = np.concatenate((idx_x, idx_y))
-                h = np.concatenate((x_from_x_test, prediction))
-                h_sort = np.reshape(h[np.argsort(idx)], newshape=(1, -1))
+                idx = np.reshape(np.concatenate((idx_x, idx_y)), newshape=(1, -1))
+                h = np.concatenate((x_from_x_test, prediction), axis=1)
+                h_sort = np.reshape(h[:, np.argsort(idx)], newshape=(1, -1))
 
             elif total_ones == p:
                 h_sort = np.copy(self.x_test)
