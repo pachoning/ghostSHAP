@@ -7,7 +7,10 @@ class GhostShap:
     def __init__(self, predict_fn, data, x_test):
         self.predict_fn = predict_fn
         self.data = data
-        self.x_test = x_test
+        if len(x_test.shape) == 1:
+            self.x_test = np.reshape(x_test, newshape=(1, -1))
+        else:
+            self.x_test = x_test
         self.num_individuals = data.shape[0]
         self.num_features = data.shape[1]
         self.inf_value = 1e9
@@ -88,7 +91,14 @@ class GhostShap:
         else:
             if index_empty_set == 0:
                 Y[0] = mean_predicted_value
-                Y[1:] = self.predict_fn(H[1:])
+                H_rest = H[1:]
+                H_rest_predict = self.predict_fn(H_rest)
+                dim_H_rest_predict = len(H_rest_predict.shape)
+                if dim_H_rest_predict == 1:
+                    H_rest_predict = np.reshape(
+                        H_rest_predict, newshape=(len(H_rest_predict), -1)
+                    )
+                Y[1:] = H_rest_predict
             elif index_empty_set == n_rows_Z - 1:
                 Y[:index_empty_set] = self.predict_fn(H[:index_empty_set])
                 Y[index_empty_set] = mean_predicted_value
