@@ -7,7 +7,10 @@ class GhostShap:
     def __init__(self, predict_fn, data, x_test):
         self.predict_fn = predict_fn
         self.data = data
-        self.x_test = x_test
+        if len(x_test.shape) == 1:
+            self.x_test = np.reshape(x_test, newshape=(1, -1))
+        else:
+            self.x_test = x_test
         self.num_individuals = data.shape[0]
         self.num_features = data.shape[1]
         self.inf_value = 1e9
@@ -41,7 +44,6 @@ class GhostShap:
     # Obtain matrix H
     # TO DO: run this in parallel
     def obtain_H(self, Z):
-        idx_columns = range(self.num_features)
         ones_vector = np.full(shape=(self.num_individuals, 1), fill_value=1)
         n_rows_Z = Z.shape[0]
         p = self.num_features
@@ -68,14 +70,14 @@ class GhostShap:
                 x_from_x_test = self.x_test[:, idx_x]
                 x_from_x_test_intercept = np.concatenate(([[1]], x_from_x_test), axis=1)
                 prediction = np.matmul(x_from_x_test_intercept, beta)
-                idx = np.concatenate((idx_x, idx_y))
-                h = np.concatenate((x_from_x_test, prediction))
-                h_sort = np.reshape(h[np.argsort(idx)], newshape=(1, -1))
+                idx = np.reshape(np.concatenate((idx_x, idx_y)), newshape=(1, -1))
+                h = np.concatenate((x_from_x_test, prediction), axis=1)
+                h_sort = np.reshape(h[:, np.argsort(idx)], newshape=(1, -1))
 
             elif total_ones == p:
                 h_sort = np.copy(self.x_test)
             else:
-                h_sort = H[i_z]
+                h_sort = np.full(shape=(1, p), fill_value=np.NaN)
 
             H[i_z] = h_sort
         return H
@@ -89,7 +91,14 @@ class GhostShap:
         else:
             if index_empty_set == 0:
                 Y[0] = mean_predicted_value
-                Y[1:] = self.predict_fn(H[1:])
+                H_rest = H[1:]
+                H_rest_predict = self.predict_fn(H_rest)
+                dim_H_rest_predict = len(H_rest_predict.shape)
+                if dim_H_rest_predict == 1:
+                    H_rest_predict = np.reshape(
+                        H_rest_predict, newshape=(len(H_rest_predict), -1)
+                    )
+                Y[1:] = H_rest_predict
             elif index_empty_set == n_rows_Z - 1:
                 Y[:index_empty_set] = self.predict_fn(H[:index_empty_set])
                 Y[index_empty_set] = mean_predicted_value
