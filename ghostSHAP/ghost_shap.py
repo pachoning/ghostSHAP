@@ -77,7 +77,7 @@ class GhostShap:
             elif total_ones == p:
                 h_sort = np.copy(self.x_test)
             else:
-                h_sort = H[i_z]
+                h_sort = np.full(shape=(1, p), fill_value=np.NaN)
 
             H[i_z] = h_sort
         return H
